@@ -56,14 +56,17 @@ def should_surface(
     n_groups: int,
     n_services: int,
     surface_threshold: float = 0.55,
+    has_kept_group: bool = False,
+    n_alerts_raw: int = 0,
 ) -> tuple[bool, str | None]:
     """Return (surfaced, reason_string_or_None).
 
-    Tightened rules (vs original):
-      - multi_service threshold raised 4→8 AND requires n_groups >= 3
-        to reduce false positives from the over-merged union-find clusters.
-      - critical_severity kept: a single critical group must surface.
-      - history_match kept: strong signal for recurring patterns.
+    Tightened rules:
+      - multi_service: n_services >= 5 and n_groups >= 3
+      - critical_severity: max_severity_num == 4
+      - history_match: score >= 0.80 and n_groups >= 2
+      - priority: score >= surface_threshold (0.55)
+      - safety_net: any cluster containing classifier-kept groups and >= 3 alerts surfaces as YELLOW
     """
     if score >= surface_threshold:
         return True, "priority"
@@ -73,4 +76,6 @@ def should_surface(
         return True, "history_match"
     if n_services >= 5 and n_groups >= 3:
         return True, "multi_service"
+    if has_kept_group and n_alerts_raw >= 3:
+        return True, "safety_net"
     return False, None

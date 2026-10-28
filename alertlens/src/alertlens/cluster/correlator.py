@@ -171,7 +171,7 @@ def run_classifier_rules(
                 uf.union(a["group_id"], b["group_id"])
 
     cluster_map = uf.clusters([g["group_id"] for g in groups])
-    _persist_clusters(conn, run_id, cluster_map, groups, DG, out_json=out_json)
+    _persist_clusters(conn, run_id, cluster_map, groups, DG, out_json=out_json, kept_set=kept_set)
 
 
 # ---------------------------------------------------------------------------
@@ -201,7 +201,7 @@ def run_ml_clustering(
     pair_window = pair_window_min or settings.pair_window_min
     g_thr = group_threshold if group_threshold is not None else float(os.environ.get("ALERTLENS_GROUP_THRESHOLD_FULL", "0.001"))
     p_thr = pair_threshold if pair_threshold is not None else getattr(settings, "pair_threshold", 0.60)
-    timeout_min = inactivity_timeout_min if inactivity_timeout_min is not None else int(os.environ.get("ALERTLENS_INACTIVITY_TIMEOUT_MIN", "15"))
+    timeout_min = inactivity_timeout_min if inactivity_timeout_min is not None else int(os.environ.get("ALERTLENS_INACTIVITY_TIMEOUT_MIN", "60"))
     window_td = timedelta(minutes=pair_window)
     timeout_td = timedelta(minutes=timeout_min)
 
@@ -310,18 +310,20 @@ def run_ml_clustering(
             # expired → they stay closed, already assigned
         open_incidents[:] = still_open
 
-        # Score against recent members of each open incident
+        # Score against recent members of candidate open incidents (<= 2 hops)
         best_score = -1.0
         best_inc = None
         for oi in open_incidents:
-            # Score against last N members within window
-            recent = [
-                m for m in oi["members"]
-                if gdt - _parse_ts(m["first_ts"]) <= window_td
-            ][-5:]
-            if not recent:
-                recent = oi["members"][-3:]
-            scores = [_score_pair(m, g) for m in recent]
+            # Candidate matching: check graph proximity <= 2 hops to ANY member
+            min_d = min(shortest_paths.get(m["service_id"], {}).get(g["service_id"], 6) for m in oi["members"])
+            if min_d > 2:
+                continue
+
+            # Candidate matching: score against members within <= 2 hops (up to 5 most recent)
+            matching_members = [m for m in oi["members"] if shortest_paths.get(m["service_id"], {}).get(g["service_id"], 6) <= 2][-5:]
+            if not matching_members:
+                matching_members = oi["members"][-5:]
+            scores = [_score_pair(m, g) for m in matching_members]
             score = max(scores) if scores else 0.0
             if score > best_score:
                 best_score = score
@@ -347,7 +349,7 @@ def run_ml_clustering(
     for gid, iid in cluster_assignment.items():
         cluster_map.setdefault(iid, []).append(gid)
 
-    _persist_clusters(conn, run_id, cluster_map, groups, DG, out_json=out_json)
+    _persist_clusters(conn, run_id, cluster_map, groups, DG, out_json=out_json, kept_set=kept_set)
 
 
 # ---------------------------------------------------------------------------
@@ -361,6 +363,7 @@ def _persist_clusters(
     groups: list[dict],
     DG: nx.DiGraph,
     out_json: str | None = None,
+    kept_set: set[str] | None = None,
 ) -> None:
     """Write cluster results to DB and optionally to a JSON file."""
     group_by_id = {g["group_id"]: g for g in groups}
@@ -398,14 +401,20 @@ def _persist_clusters(
 
         hist_match, hist_type = history_match_score(members, train_incidents)
 
+        has_kept_group = any(m["group_id"] in kept_set for m in members) if kept_set is not None else False
+
         prio = priority_score(max_sev_num, n_services, blast_radius, hist_match, n_alerts_raw)
         band = get_band(prio, max_sev_num)
         surfaced, surface_reason = should_surface(
             prio, max_sev_num, hist_match, n_groups, n_services,
             settings.surface_threshold,
+            has_kept_group=has_kept_group,
+            n_alerts_raw=n_alerts_raw,
         )
         if not surfaced:
             band = "BACKGROUND"
+        elif band == "BACKGROUND":
+            band = "YELLOW"
 
         surfaced_ts = first_ts if surfaced else None
 
