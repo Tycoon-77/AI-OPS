@@ -1,0 +1,121 @@
+@import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
+
+@layer base {
+  :root {
+    --bg-main: #0B1020;
+    --bg-sidebar: #111827;
+    --bg-card: #151D2E;
+    --bg-secondary: #1E293B;
+    --accent-primary: #6366F1;
+    --accent-secondary: #38BDF8;
+    --status-success: #22C55E;
+    --status-warning: #F59E0B;
+    --status-critical: #EF4444;
+    --text-main: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --border-app: #293449;
+  }
+
+  body {
+    background-color: #0B1020;
+    color: #F8FAFC;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow-x: hidden;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Custom Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0B1020;
+}
+::-webkit-scrollbar-thumb {
+  background: #293449;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3e4e6d;
+}
+
+/* React Flow Dark Theme Overrides */
+.react-flow__background {
+  background-color: #0d1424 !important;
+}
+
+.react-flow__controls {
+  background: #151D2E !important;
+  border: 1px solid #3b4d6e !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6) !important;
+  overflow: hidden;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.react-flow__controls-button {
+  background: #151D2E !important;
+  border-bottom: 1px solid #293449 !important;
+  width: 34px !important;
+  height: 34px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #F8FAFC !important;
+  fill: #F8FAFC !important;
+  transition: all 0.2s ease !important;
+}
+
+.react-flow__controls-button svg {
+  fill: #F8FAFC !important;
+  stroke: #F8FAFC !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.react-flow__controls-button:hover {
+  background: #4F46E5 !important;
+  color: #FFFFFF !important;
+  fill: #FFFFFF !important;
+}
+
+.react-flow__controls-button:hover svg {
+  fill: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+}
+
+.react-flow__minimap {
+  background: #111827 !important;
+  border: 1px solid #293449 !important;
+  border-radius: 8px !important;
+}
+
+.react-flow__attribution {
+  display: none !important;
+}
+
+/* Subtle animation pulses */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.02); }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom subtle glass/card glow */
+.card-glow-indigo {
+  box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.15);
+}
+
+.card-glow-critical {
+  box-shadow: 0 0 25px -5px rgba(239, 68, 68, 0.18);
+}
