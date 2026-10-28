@@ -43,14 +43,9 @@ GROUP_FEATURE_NAMES = [
 ]
 
 SOURCE_MAP: Dict[str, int] = {
-    "prometheus": 0,
-    "datadog": 1,
-    "cloudwatch": 2,
-    "pagerduty": 3,
-    "nagios": 4,
-    "zabbix": 5,
-    "grafana": 6,
-    "newrelic": 7,
+    "logging": 0,
+    "monitoring": 1,
+    "uptime": 2,
 }
 _UNKNOWN_SRC = len(SOURCE_MAP)
 
@@ -90,153 +85,130 @@ def build_group_features(
     if neighbors is None:
         neighbors = _load_neighbors(conn)
 
-    # ------------------------------------------------------------------ #
-    # Pre-compute TRAIN-only baselines (no leakage regardless of split)
-    # ------------------------------------------------------------------ #
-    # Service average alert_count across all train groups
-    svc_avg: Dict[str, float] = {}
-    for r in conn.execute(
-        "SELECT service_id, AVG(alert_count) AS avg FROM alert_groups WHERE split='train' GROUP BY service_id"
-    ).fetchall():
-        svc_avg[r["service_id"]] = max(float(r["avg"]), 1.0)
-
-    # Fingerprint: earliest first_ts in train (for is_new_fingerprint)
-    fp_first_train: Dict[str, datetime] = {}
-    for r in conn.execute(
-        "SELECT fingerprint_id, MIN(first_ts) AS fts FROM alert_groups WHERE split='train' GROUP BY fingerprint_id"
-    ).fetchall():
-        fp_first_train[r["fingerprint_id"]] = _parse_ts(r["fts"])
-
-    # Fingerprint daily frequency (groups per day) — train only
-    fp_daily_freq: Dict[str, float] = {}
-    for r in conn.execute(
-        """SELECT fingerprint_id,
-                  COUNT(*) AS n,
-                  MAX(julianday(last_ts) - julianday(first_ts) + 1) AS span_days
-           FROM alert_groups WHERE split='train'
-           GROUP BY fingerprint_id"""
-    ).fetchall():
-        span = max(float(r["span_days"]), 1.0)
-        fp_daily_freq[r["fingerprint_id"]] = float(r["n"]) / span
-
-    # precursor_rate = distinct incidents where fp appeared in train / total
-    # train groups for that fp (a noise-inspired signal; train split only)
-    fp_precursor: Dict[str, float] = {}
-    for r in conn.execute(
-        """SELECT fingerprint_id,
-                  SUM(alert_count)                          AS vol,
-                  COUNT(DISTINCT truth_incident_id) - (MIN(truth_incident_id) IS NULL) AS involved
-           FROM alert_groups WHERE split='train'
-           GROUP BY fingerprint_id"""
-    ).fetchall():
-        vol = max(float(r["vol"]), 1.0)
-        involved = float(max(r["involved"] or 0, 0))
-        fp_precursor[r["fingerprint_id"]] = involved / vol
-
-    # ------------------------------------------------------------------ #
-    # Load target groups (sorted by first_ts for window features)
-    # ------------------------------------------------------------------ #
-    if split == "all":
-        where, params = "", ()
-    else:
-        where, params = "WHERE ag.split = ?", (split,)
-
-    rows = conn.execute(
-        f"""SELECT ag.group_id, ag.fingerprint_id, ag.service_id, ag.source,
-                   ag.first_ts, ag.last_ts, ag.alert_count, ag.max_severity_num,
-                   ag.split, ag.truth_incident_id, s.tier
-            FROM alert_groups ag
-            JOIN services s ON ag.service_id = s.service_id
-            {where}
-            ORDER BY ag.first_ts""",
-        params,
+    # Load ALL groups in chronological order to compute strictly-prior historical features
+    all_rows = conn.execute(
+        """SELECT ag.group_id, ag.fingerprint_id, ag.service_id, ag.source,
+                  ag.first_ts, ag.last_ts, ag.alert_count, ag.max_severity_num,
+                  ag.split, ag.truth_incident_id, s.tier
+           FROM alert_groups ag
+           JOIN services s ON ag.service_id = s.service_id
+           ORDER BY ag.first_ts"""
     ).fetchall()
 
-    groups = [dict(r) for r in rows]
+    groups = [dict(r) for r in all_rows]
     for g in groups:
         g["_dt"] = _parse_ts(g["first_ts"])
 
-    n = len(groups)
     timestamps = [g["_dt"] for g in groups]
+    n = len(groups)
 
-    X_rows: List[List[float]] = []
-    y_rows: List[int] = []
-    group_ids: List[str] = []
+    # Map each incident to its earliest alert timestamp
+    incident_start_times: Dict[str, datetime] = {}
+    for g in groups:
+        inc = g["truth_incident_id"]
+        if inc and inc not in incident_start_times:
+            incident_start_times[inc] = g["_dt"]
+
+    # Running state strictly prior to current group
+    svc_running_vol: Dict[str, float] = {}
+    svc_running_cnt: Dict[str, float] = {}
+    fp_first_seen: Dict[str, datetime] = {}
+    fp_prior_vol: Dict[str, float] = {}
+    fp_prior_incidents: Dict[str, set] = {}
+
+    p5_lo, p5_hi = 0, 0
+    p10_lo, p10_hi = 0, 0
+
+    X_all: List[List[float]] = []
+    y_all: List[int] = []
+    gids_all: List[str] = []
+    splits_all: List[str] = []
 
     for i, g in enumerate(groups):
         gdt = g["_dt"]
         fp_id = g["fingerprint_id"]
         svc = g["service_id"]
-
-        # -- alert_count --------------------------------------------------
         ac = float(g["alert_count"])
-        log_ac = float(np.log1p(ac))
-
-        # -- severity / tier ----------------------------------------------
         sev = float(g["max_severity_num"])
         tier = float(g["tier"])
 
-        # -- burst_rate: ac vs service's train baseline -------------------
-        burst_rate = ac / svc_avg.get(svc, 1.0)
+        # Service baseline strictly prior to current timestamp
+        vol = svc_running_vol.get(svc, 0.0)
+        cnt = svc_running_cnt.get(svc, 0.0)
+        base_ac = (vol / cnt) if cnt > 0 else 1.0
+        burst_rate = ac / max(base_ac, 1.0)
 
-        # -- is_new_fingerprint: never seen in train OR appeared < 1h ago -
-        fft = fp_first_train.get(fp_id)
-        if fft is None:
-            is_new = 1.0
+        # Novel fingerprint flag (never seen or first seen < 1 hour ago)
+        fst = fp_first_seen.get(fp_id)
+        is_new = 1.0 if fst is None or (gdt - fst).total_seconds() < 3600 else 0.0
+
+        # Fingerprint frequency (groups/alerts per day prior to now)
+        fp_vol = fp_prior_vol.get(fp_id, 0.0)
+        if fst is not None:
+            days = max((gdt - fst).total_seconds() / 86400.0, 0.1)
+            fp_freq = fp_vol / days
         else:
-            is_new = 1.0 if gdt <= fft + timedelta(hours=1) else 0.0
+            fp_freq = 0.0
 
-        # -- fingerprint_daily_freq (train-computed) ----------------------
-        fp_freq = fp_daily_freq.get(fp_id, 0.0)
+        # Precursor rate strictly prior to now:
+        # distinct completed incidents (>2 hours ago) this fingerprint was involved in / prior volume
+        past_incs = {
+            inc for inc in fp_prior_incidents.get(fp_id, set())
+            if (gdt - incident_start_times[inc]).total_seconds() > 7200
+        }
+        pr = len(past_incs) / max(fp_vol, 1.0) if fp_vol > 0 else 0.0
 
-        # -- precursor_rate (train-computed) ------------------------------
-        pr = fp_precursor.get(fp_id, 0.0)
+        # 5-minute distinct services window
+        while p5_lo < n and gdt - timestamps[p5_lo] > _WINDOW_5:
+            p5_lo += 1
+        while p5_hi < n and timestamps[p5_hi] - gdt <= _WINDOW_5:
+            p5_hi += 1
+        win_svcs = float(len({groups[j]["service_id"] for j in range(p5_lo, p5_hi)}))
 
-        # -- service_window_service_count: distinct svcs ±5 min ----------
-        lo = i
-        while lo > 0 and gdt - timestamps[lo - 1] <= _WINDOW_5:
-            lo -= 1
-        hi = i
-        while hi < n - 1 and timestamps[hi + 1] - gdt <= _WINDOW_5:
-            hi += 1
-        win_svcs = {groups[j]["service_id"] for j in range(lo, hi + 1)}
-        svc_count = float(len(win_svcs))
-
-        # -- neighbor_alert_count: graph-1 neighbours within 10 min ------
-        nbrs = set(neighbors.get(svc, []))
-        lo2 = i
-        while lo2 > 0 and gdt - timestamps[lo2 - 1] <= _WINDOW_10:
-            lo2 -= 1
-        hi2 = i
-        while hi2 < n - 1 and timestamps[hi2 + 1] - gdt <= _WINDOW_10:
-            hi2 += 1
+        # 10-minute neighbor alert activity
+        while p10_lo < n and gdt - timestamps[p10_lo] > _WINDOW_10:
+            p10_lo += 1
+        while p10_hi < n and timestamps[p10_hi] - gdt <= _WINDOW_10:
+            p10_hi += 1
+        svc_nbrs = set(neighbors.get(svc, []))
         nbr_ac = float(sum(
             groups[j]["alert_count"]
-            for j in range(lo2, hi2 + 1)
-            if j != i and groups[j]["service_id"] in nbrs
+            for j in range(p10_lo, p10_hi)
+            if j != i and groups[j]["service_id"] in svc_nbrs
         ))
 
-        # -- temporal -----------------------------------------------------
         hour = float(gdt.hour)
         dow = float(gdt.weekday())
-
-        # -- source encoding ----------------------------------------------
         src_enc = float(SOURCE_MAP.get(str(g["source"]), _UNKNOWN_SRC))
 
-        X_rows.append([
-            ac, log_ac, sev, tier, burst_rate,
+        # Update running history strictly after feature calculation
+        svc_running_vol[svc] = svc_running_vol.get(svc, 0.0) + ac
+        svc_running_cnt[svc] = svc_running_cnt.get(svc, 0.0) + 1.0
+        fp_prior_vol[fp_id] = fp_prior_vol.get(fp_id, 0.0) + ac
+        if fst is None:
+            fp_first_seen[fp_id] = gdt
+        if g["truth_incident_id"]:
+            fp_prior_incidents.setdefault(fp_id, set()).add(g["truth_incident_id"])
+
+        X_all.append([
+            ac, np.log1p(ac), sev, tier, burst_rate,
             is_new, fp_freq, pr,
-            svc_count, nbr_ac,
+            win_svcs, nbr_ac,
             hour, dow, src_enc,
         ])
-        y_rows.append(1 if g["truth_incident_id"] is not None else 0)
-        group_ids.append(g["group_id"])
+        y_all.append(1 if g["truth_incident_id"] is not None else 0)
+        gids_all.append(g["group_id"])
+        splits_all.append(g["split"])
 
-    return (
-        np.array(X_rows, dtype=np.float32),
-        np.array(y_rows, dtype=np.int32),
-        group_ids,
-    )
+    X_arr = np.array(X_all, dtype=np.float32)
+    y_arr = np.array(y_all, dtype=np.int32)
+
+    if split == "all":
+        return X_arr, y_arr, gids_all
+
+    mask = [s == split for s in splits_all]
+    idx = [i for i, m in enumerate(mask) if m]
+    return X_arr[idx], y_arr[idx], [gids_all[i] for i in idx]
 
 
 def _load_neighbors(conn: sqlite3.Connection) -> Dict[str, List[str]]:

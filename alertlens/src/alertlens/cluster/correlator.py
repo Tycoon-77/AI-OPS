@@ -325,11 +325,12 @@ def run_ml_clustering(
                 matching_members = oi["members"][-5:]
             scores = [_score_pair(m, g) for m in matching_members]
             score = max(scores) if scores else 0.0
-            if score > best_score:
+            req_thr = min(0.10, p_thr) if min_d <= 1 else p_thr
+            if score >= req_thr and score > best_score:
                 best_score = score
                 best_inc = oi
 
-        if best_score >= p_thr and best_inc is not None:
+        if best_inc is not None:
             best_inc["members"].append(g)
             best_inc["last_ts"] = gdt
             cluster_assignment[gid] = best_inc["id"]
