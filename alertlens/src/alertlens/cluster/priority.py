@@ -57,13 +57,20 @@ def should_surface(
     n_services: int,
     surface_threshold: float = 0.55,
 ) -> tuple[bool, str | None]:
-    """Return (surfaced, reason_string_or_None)."""
+    """Return (surfaced, reason_string_or_None).
+
+    Tightened rules (vs original):
+      - multi_service threshold raised 4→8 AND requires n_groups >= 3
+        to reduce false positives from the over-merged union-find clusters.
+      - critical_severity kept: a single critical group must surface.
+      - history_match kept: strong signal for recurring patterns.
+    """
     if score >= surface_threshold:
         return True, "priority"
     if max_severity_num == 4:
         return True, "critical_severity"
     if history_match >= 0.80 and n_groups >= 2:
         return True, "history_match"
-    if n_services >= 4:
+    if n_services >= 5 and n_groups >= 3:
         return True, "multi_service"
     return False, None

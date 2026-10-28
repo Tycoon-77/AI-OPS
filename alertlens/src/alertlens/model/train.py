@@ -1,7 +1,10 @@
 """
 LightGBM pairwise alert correlator training.
 Follows BACKEND_STRUCTURE.md Section 5.3-5.5.
-Trains on train split, saves to models/pair_lgbm.txt.
+Trains on train split, saves to models/pair_lgbm.txt (default) or a custom path.
+
+Now delegates feature extraction to alertlens.features.pair_features so that
+training and inference share one implementation.
 """
 from __future__ import annotations
 
@@ -15,10 +18,11 @@ import lightgbm as lgb
 import networkx as nx
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics import classification_report, roc_auc_score
+from sklearn.metrics import roc_auc_score
 
 from alertlens.api.db import get_connection
 from alertlens.cluster.graph_utils import build_directed_graph, build_undirected_graph
+from alertlens.features.pair_features import FEATURE_NAMES, extract_pair_features
 
 
 def train_pair_model(
@@ -49,7 +53,7 @@ def train_pair_model(
     for g in groups:
         g["dt"] = datetime.fromisoformat(g["first_ts"].replace("Z", "+00:00"))
 
-    # Fit TF-IDF on templates
+    # Fit TF-IDF on templates (train split only)
     templates = [g["template"] for g in groups]
     tfidf = TfidfVectorizer(ngram_range=(3, 5), analyzer="char", min_df=2, max_features=1000)
     tfidf_matrix = tfidf.fit_transform(templates)
@@ -78,31 +82,16 @@ def train_pair_model(
     pairs = pos_pairs + sampled_negs
     random.shuffle(pairs)
 
-    feature_names = [
-        "dt_sec", "log_dt", "g_dist", "a_dep_b", "b_dep_a",
-        "t_a", "t_b", "t_diff", "same_src", "same_sev", "sev_a", "sev_b", "text_sim"
-    ]
-
     X = []
     y = []
     for a_idx, b_idx, label in pairs:
-        a = groups[a_idx]
-        b = groups[b_idx]
-        dt_sec = (b["dt"] - a["dt"]).total_seconds()
-        log_dt = np.log1p(dt_sec)
-        s_a, s_b = a["service_id"], b["service_id"]
-        g_dist = shortest_paths.get(s_a, {}).get(s_b, 6)
-        a_dep_b = 1.0 if s_b in reachability.get(s_a, set()) else 0.0
-        b_dep_a = 1.0 if s_a in reachability.get(s_b, set()) else 0.0
-        t_a, t_b = a["tier"], b["tier"]
-        t_diff = abs(t_a - t_b)
-        same_src = 1.0 if a["source"] == b["source"] else 0.0
-        same_sev = 1.0 if a["max_severity_num"] == b["max_severity_num"] else 0.0
-        sev_a, sev_b = a["max_severity_num"], b["max_severity_num"]
-        vec_a = tfidf_matrix[a_idx]
-        vec_b = tfidf_matrix[b_idx]
-        text_sim = float(vec_a.dot(vec_b.T).toarray()[0][0])
-        X.append([dt_sec, log_dt, g_dist, a_dep_b, b_dep_a, t_a, t_b, t_diff, same_src, same_sev, sev_a, sev_b, text_sim])
+        feats = extract_pair_features(
+            groups[a_idx], groups[b_idx],
+            a_idx, b_idx,
+            shortest_paths, reachability,
+            tfidf_matrix,
+        )
+        X.append(feats)
         y.append(label)
 
     X = np.array(X, dtype=np.float32)
@@ -128,7 +117,7 @@ def train_pair_model(
 
     preds = clf.predict_proba(X)[:, 1]
     auc = float(roc_auc_score(y, preds))
-    importances = {name: int(imp) for name, imp in zip(feature_names, clf.feature_importances_)}
+    importances = {name: int(imp) for name, imp in zip(FEATURE_NAMES, clf.feature_importances_)}
 
     conn.close()
     return {
