@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import apiClient from '../../services/api';
+import { useBackendStatus, fmtInt } from '../../services/status';
 import {
   Menu,
   Search,
@@ -22,6 +24,12 @@ export const TopNavbar = ({ onOpenSidebar, onOpenUploadModal }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const { live, stats } = useBackendStatus();
+  const [topIncidents, setTopIncidents] = useState([]);
+  useEffect(() => {
+    if (!live) { setTopIncidents([]); return; }
+    apiClient.get('/api/incidents', { params: { limit: 5 } }).then((r) => setTopIncidents(r.data || [])).catch(() => setTopIncidents([]));
+  }, [live, stats?.runId]);
 
   // Clock tick every second
   useEffect(() => {
@@ -90,7 +98,7 @@ export const TopNavbar = ({ onOpenSidebar, onOpenUploadModal }) => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search 400 alerts, services, or INC-001..."
+              placeholder={live && stats ? `Search ${fmtInt(stats.rawAlerts)} alerts, services, or incident IDs...` : 'Search alerts, services, or incident IDs...'}
               className="w-full bg-[#151D2E] border border-[#293449] text-sm text-slate-200 pl-9 pr-12 py-1.5 rounded-lg focus:outline-none focus:border-indigo-500 transition-colors placeholder:text-slate-400"
             />
             <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-[#1E293B] rounded border border-slate-700/60">
@@ -129,6 +137,19 @@ export const TopNavbar = ({ onOpenSidebar, onOpenUploadModal }) => {
             </div>
           </div>
 
+          {/* Data source badge (driven by /api/health) */}
+          <span
+            className={`hidden sm:inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wide border ${
+              live === null ? 'bg-slate-800 text-slate-300 border-slate-600'
+              : live ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40'
+              : 'bg-amber-500/15 text-amber-300 border-amber-500/40'
+            }`}
+            title={live ? `Run ${stats?.runId || ''} · simulated data` : 'Backend unreachable: pages show built-in mock data'}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${live ? 'bg-emerald-400' : live === null ? 'bg-slate-400' : 'bg-amber-400'}`} />
+            {live === null ? 'Checking…' : live ? 'Live data' : 'Demo data (backend unreachable)'}
+          </span>
+
           {/* Notification Bell */}
           <div className="relative">
             <button
@@ -146,40 +167,28 @@ export const TopNavbar = ({ onOpenSidebar, onOpenUploadModal }) => {
                 <div className="px-3 py-2 border-b border-[#293449] flex items-center justify-between">
                   <span className="text-xs font-semibold text-white">Live Intelligence Stream</span>
                   <span className="text-[10px] bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded border border-red-500/30">
-                    3 Active Incidents
+                    {live && stats ? `${fmtInt(stats.surfaced)} surfaced · ${fmtInt(stats.redOrange)} RED+ORANGE` : 'Demo data'}
                   </span>
                 </div>
                 <div className="divide-y divide-[#293449]/60 max-h-64 overflow-y-auto">
-                  <div className="p-3 hover:bg-[#1E293B]/60 transition-colors cursor-pointer" onClick={() => navigate('/incidents/INC-001')}>
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
-                      <div>
-                        <div className="text-xs font-medium text-white">INC-001: Database Degraded</div>
-                        <div className="text-[11px] text-slate-400">182 alerts correlated • Postgres connection pool 98%</div>
-                        <div className="text-[10px] text-indigo-400 mt-1">2 mins ago</div>
+                  {!live && (
+                    <div className="p-3 text-[11px] text-amber-300">Backend unreachable: no live incidents to show.</div>
+                  )}
+                  {live && topIncidents.length === 0 && (
+                    <div className="p-3 text-[11px] text-slate-400">No surfaced incidents.</div>
+                  )}
+                  {topIncidents.map((inc) => (
+                    <div key={inc.id} className="p-3 hover:bg-[#1E293B]/60 transition-colors cursor-pointer" onClick={() => { setShowNotifications(false); navigate(`/incidents/${inc.id}`); }}>
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className={`w-4 h-4 mt-0.5 shrink-0 ${inc.band === 'RED' ? 'text-red-400' : 'text-amber-400'}`} />
+                        <div>
+                          <div className="text-xs font-medium text-white">{inc.band}: {inc.title}</div>
+                          <div className="text-[11px] text-slate-400">{inc.relatedAlertsCount} alerts · {inc.affectedServices?.length} services · origin {inc.probableRootCauseService}</div>
+                          <div className="text-[10px] text-indigo-400 mt-1">{inc.firstDetected}</div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="p-3 hover:bg-[#1E293B]/60 transition-colors cursor-pointer" onClick={() => navigate('/incidents/INC-002')}>
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
-                      <div>
-                        <div className="text-xs font-medium text-white">INC-002: Ingress Latency Spike</div>
-                        <div className="text-[11px] text-slate-400">114 alerts correlated • API Gateway 504 timeouts</div>
-                        <div className="text-[10px] text-indigo-400 mt-1">14 mins ago</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-3 hover:bg-[#1E293B]/60 transition-colors cursor-pointer" onClick={() => navigate('/incidents/INC-003')}>
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
-                      <div>
-                        <div className="text-xs font-medium text-white">INC-003: Payment Webhook Delay</div>
-                        <div className="text-[11px] text-slate-400">79 alerts correlated • Retry queue depth surge</div>
-                        <div className="text-[10px] text-indigo-400 mt-1">28 mins ago</div>
-                      </div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
                 <div className="px-3 pt-2 border-t border-[#293449] text-center">
                   <button
@@ -221,7 +230,7 @@ export const TopNavbar = ({ onOpenSidebar, onOpenUploadModal }) => {
               About SignalIQ Incident Intelligence
             </h3>
             <p className="text-sm text-slate-300 mb-4">
-              <strong>AO-01 Problem Statement:</strong> 400 alerts, three real incidents.
+              <strong>AO-01 Problem Statement:</strong> hundreds of alerts a day, a few real incidents.
             </p>
             <div className="space-y-3 text-xs text-slate-300">
               <div className="p-3 rounded-lg bg-[#111827] border border-[#293449]">

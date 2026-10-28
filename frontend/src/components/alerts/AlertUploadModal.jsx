@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
+import { useBackendStatus, fmtInt } from '../../services/status';
 import { UploadCloud, FileText, CheckCircle2, AlertCircle, X, ArrowRight, Sparkles } from 'lucide-react';
 import { alertService } from '../../services/alertService';
 
 export const AlertUploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
+  const { stats, live } = useBackendStatus();
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -231,19 +233,19 @@ export const AlertUploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="p-3 bg-[#111827] border border-[#293449] rounded-lg">
                   <span className="text-slate-400 block mb-0.5">Alerts Parsed</span>
-                  <span className="text-base font-bold text-white font-mono">{resultSummary.alertsParsed || 400}</span>
+                  <span className="text-base font-bold text-white font-mono">{resultSummary.alertsParsed || (stats ? fmtInt(stats.rawAlerts) : '—')}</span>
                 </div>
                 <div className="p-3 bg-[#111827] border border-[#293449] rounded-lg">
                   <span className="text-slate-400 block mb-0.5">Duplicate Alerts Identified</span>
-                  <span className="text-base font-bold text-amber-400 font-mono">{resultSummary.duplicatesIdentified || 94}</span>
+                  <span className="text-base font-bold text-amber-400 font-mono">{resultSummary.duplicatesIdentified || (stats ? fmtInt(stats.rawAlerts - stats.alertGroups) : '—')}</span>
                 </div>
                 <div className="p-3 bg-[#111827] border border-[#293449] rounded-lg">
                   <span className="text-slate-400 block mb-0.5">Correlated Incidents</span>
-                  <span className="text-base font-bold text-indigo-400 font-mono">3 Incidents</span>
+                  <span className="text-base font-bold text-indigo-400 font-mono">{resultSummary.incidentsCount ? `${resultSummary.incidentsCount} Incidents` : (stats ? `${fmtInt(stats.surfaced)} Incidents` : '—')}</span>
                 </div>
                 <div className="p-3 bg-[#111827] border border-[#293449] rounded-lg">
                   <span className="text-slate-400 block mb-0.5">Noise Reduction</span>
-                  <span className="text-base font-bold text-emerald-400 font-mono">{resultSummary.noiseReducedPercentage || '93.75%'}</span>
+                  <span className="text-base font-bold text-emerald-400 font-mono">{resultSummary.noiseReducedPercentage || (stats ? `${stats.noiseCutPct}%` : '—')}</span>
                 </div>
               </div>
 

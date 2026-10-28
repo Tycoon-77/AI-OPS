@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useBackendStatus, fmtInt } from '../../services/status';
 import {
   LayoutDashboard,
   BellRing,
@@ -16,8 +17,8 @@ import {
 
 const navItems = [
   { name: 'Overview', path: '/', icon: LayoutDashboard },
-  { name: 'Alert Explorer', path: '/alerts', icon: BellRing, badge: '400' },
-  { name: 'Incidents', path: '/incidents', icon: Flame, badge: '3', badgeColor: 'bg-red-500/20 text-red-400 border border-red-500/30' },
+  { name: 'Alert Explorer', path: '/alerts', icon: BellRing, badgeKey: 'rawAlerts' },
+  { name: 'Incidents', path: '/incidents', icon: Flame, badgeKey: 'surfaced', badgeColor: 'bg-red-500/20 text-red-400 border border-red-500/30' },
   { name: 'Root Cause Analysis', path: '/root-cause', icon: GitFork },
   { name: 'Service Map', path: '/service-map', icon: Network },
   { name: 'Analytics', path: '/analytics', icon: BarChart3 },
@@ -26,6 +27,7 @@ const navItems = [
 
 export const Sidebar = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
+  const { live, stats } = useBackendStatus();
 
   return (
     <>
@@ -101,13 +103,13 @@ export const Sidebar = ({ isOpen, onClose }) => {
                       <span>{item.name}</span>
                     </div>
 
-                    {item.badge && (
+                    {(item.badgeKey ? (live && stats ? fmtInt(stats[item.badgeKey]) : null) : item.badge) && (
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
                           item.badgeColor || 'bg-slate-800 text-slate-300 border border-slate-700'
                         }`}
                       >
-                        {item.badge}
+                        {item.badgeKey ? fmtInt(stats?.[item.badgeKey]) : item.badge}
                       </span>
                     )}
                   </>
@@ -122,12 +124,12 @@ export const Sidebar = ({ isOpen, onClose }) => {
           <div className="flex items-center justify-between text-xs mb-1.5">
             <span className="text-[#94A3B8] flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              Correlation Engine
+              Backend
             </span>
-            <span className="text-emerald-400 font-semibold">Active</span>
+            <span className={(live ? 'text-emerald-400' : 'text-amber-400') + ' font-semibold'}>{live === null ? 'Checking…' : live ? 'Live data' : 'Demo data'}</span>
           </div>
           <div className="text-[11px] text-slate-400">
-            Deduplication & Graph ML: <span className="text-slate-200 font-medium">93.75% Noise Cut</span>
+            Rule-based correlation: <span className="text-slate-200 font-medium">{live && stats ? `${stats.noiseCutPct}% fewer items` : 'n/a'}</span>
           </div>
         </div>
 

@@ -4,21 +4,27 @@
 
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/Frontend-React%2018%20%2B%20Vite-61DAFB.svg?logo=react&logoColor=black)](https://reactjs.org)
-[![LightGBM](https://img.shields.io/badge/ML-LightGBM%20(98.08%25%20ROC--AUC)-green.svg)](https://lightgbm.readthedocs.io)
+[![LightGBM](https://img.shields.io/badge/ML-LightGBM%20pair%20model-blue-green.svg)](https://lightgbm.readthedocs.io)
 [![Tests](https://img.shields.io/badge/Tests-14%2F14%20Passing-brightgreen.svg)]()
 
 ---
 
-## ⚡ Performance at a Glance
+## ⚡ Performance at a Glance (measured, simulated data)
 
-| Benchmark Metric | Official Target | SignalIQ Achieved | Status |
-| :--- | :--- | :--- | :--- |
-| **Alert Noise Reduction** | $\ge 90\%$ ($10\times$) | **97.38% (38.2× compression)** | 🟢 Exceeded |
-| **Incident Recall** | $\ge 90\%$ | **100.0% (11 / 11 incidents)** | 🟢 Flawless |
-| **Buried Incident Detection** | 0 missed | **100.0% (2 / 2 surfaced)** | 🟢 Flawless |
-| **Held-Out Novel Types (Cert Expiry)** | $\ge 90\%$ | **100.0% detected** | 🟢 Flawless |
-| **Pairwise ML ROC-AUC** | $\ge 0.85$ | **0.9808 (Train) / 0.8087 (Test)** | 🟢 Strong |
-| **Median Detection Latency** | $\le 120\text{ s}$ | **~68 seconds** | 🟢 Real-time |
+Computed by `alertlens/src/alertlens/eval/scorecard.py` from `clusters.json` vs ground truth (11 incidents; test split = 4 incidents, so treat it as anecdotal). Reproduce: `cd alertlens && PYTHONPATH=src python -m alertlens.eval.scorecard`.
+
+| Metric | Target | Measured (rules path, committed run) |
+| :--- | :--- | :--- |
+| Surfaced cards for 11 real incidents | a handful per day | **428** (83 RED+ORANGE) |
+| Compression (alerts ÷ cards) | ≥ 10× | **38.2×**, but only 11 of 428 cards contain a real incident (card precision 2.6%) |
+| Recall, lenient (any alert in a surfaced card) | 100% | **100%** (11/11); the old metric, kept and labelled |
+| Recall, ≥ 50% of the incident's alerts in one card | 100% | **100%**, but cards are huge (purity below) |
+| Mean cluster purity of incident cards | high | **46.9%** (e.g. 1,075-alert card with 250 real alerts) |
+| Pairwise precision / B-cubed F1 | ≥ 0.90 / ≥ 0.85 | **0.099 / 0.276** 🔴 |
+| Origin top-1 | ≥ 75% | **27.3%** (3 of 11) 🔴 |
+| Pairwise model ROC-AUC (held-out test) | ≥ 0.85 | **0.8069** (train 0.9808 is in-sample). Note: the model is trained but not yet used at inference |
+
+> The earlier "baseline" row (11.2× / 0.71 / 0.74 / 0.55) was hardcoded, not measured. The measured rules baseline is `alertlens/data/baseline/clusters_rules.json`; compare variants with `python alertlens/scripts/ablation.py`.
 
 ---
 

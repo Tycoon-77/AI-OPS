@@ -261,7 +261,8 @@ export const Settings = () => {
               <p className="text-slate-400 text-xs mt-0.5">Tune temporal envelope, semantic cosine threshold, and graph topology hops</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <p className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">Preview only: these sliders do not change the pipeline. Thresholds are set in alertlens/src/alertlens/config.py and applied when the pipeline is re-run.</p>
+<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="p-4 rounded-xl bg-[#111827] border border-[#293449] space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-white font-semibold">Correlation Sliding Time Window</label>
