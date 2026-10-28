@@ -1,0 +1,1 @@
+"""AlertLens — top-level package."""

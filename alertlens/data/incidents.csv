@@ -1,0 +1,12 @@
+incident_id,start,end,root_cause_service,type,buried
+inc_02_db_,2026-03-03T14:15:00Z,2026-03-03T14:55:00Z,db-primary,db_slowdown,False
+inc_04_bad,2026-03-05T16:30:00Z,2026-03-05T17:05:00Z,orders,bad_deploy,False
+inc_06_mem,2026-03-07T11:20:00Z,2026-03-07T12:05:00Z,cart,memory_leak,False
+inc_08_dis,2026-03-09T09:40:00Z,2026-03-09T10:10:00Z,log-cluster,disk_full,False
+inc_10_cac,2026-03-11T15:00:00Z,2026-03-11T15:35:00Z,cache-redis,cache_failure,False
+inc_11_pay,2026-03-12T11:00:00Z,2026-03-12T11:50:00Z,payments,payment_outage,True
+inc_12_que,2026-03-13T13:10:00Z,2026-03-13T13:40:00Z,msg-queue,queue_backlog,False
+inc_15_dns,2026-03-16T10:15:00Z,2026-03-16T10:40:00Z,dns,dns_failure,False
+inc_17_cer,2026-03-18T15:45:00Z,2026-03-18T16:20:00Z,auth-service,cert_expiry,False
+inc_18_db_,2026-03-19T11:30:00Z,2026-03-19T12:15:00Z,db-primary,db_slowdown,True
+inc_19_bad,2026-03-20T14:00:00Z,2026-03-20T14:30:00Z,inventory,bad_deploy,False

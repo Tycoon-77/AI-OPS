@@ -1,0 +1,46 @@
+# Virtual environments
+.venv/
+*/.venv/
+venv/
+env/
+
+# Node dependencies
+node_modules/
+*/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python caches & build artifacts
+__pycache__/
+*/__pycache__/
+*/*/__pycache__/
+*/*/*/__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+*/.pytest_cache/
+
+# SQLite temporary journal files
+*.db-shm
+*.db-wal
+
+# Frontend build artifact (alertlens/dist is kept for FastAPI serving)
+frontend/dist/
+!alertlens/dist/
+!alertlens/dist/**
+
+# OS & Editor files
+.DS_Store
+*/.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment secrets
+.env
+alertlens/.env
+frontend/.env

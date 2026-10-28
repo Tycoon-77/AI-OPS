@@ -1,0 +1,614 @@
+[
+  {
+    "fingerprint_id": "006d30129542",
+    "template": "transient healthcheck probe timeout (<num>/<num>) on admin-portal-prod-<num>",
+    "service": "admin-portal",
+    "volume": 177,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 177x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 177,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "uptime"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "009193c0af25",
+    "template": "scheduled nightly job cpu spike at <num>% on scheduler-prod-<num>",
+    "service": "scheduler",
+    "volume": 108,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 108x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 108,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "monitoring"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "0d507e44ac2e",
+    "template": "transient healthcheck probe timeout (<num>/<num>) on web-frontend-prod-<num>",
+    "service": "web-frontend",
+    "volume": 165,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 165x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 165,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "uptime"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "0e6e58c1a016",
+    "template": "search query p95 latency warning 4800ms on search-prod-<num>",
+    "service": "search",
+    "volume": 50,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 50x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 50,
+      "incident_involvement": 0,
+      "max_severity_num": 2,
+      "n_services_with_this_fp": 1,
+      "source": "monitoring"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "130c616c01a7",
+    "template": "transient healthcheck probe timeout (<num>/<num>) on api-gateway-prod-<num>",
+    "service": "api-gateway",
+    "volume": 165,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 165x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 165,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "uptime"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "15cc1287a827",
+    "template": "scheduled nightly job cpu spike at <num>% on analytics-prod-<num>",
+    "service": "analytics",
+    "volume": 120,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 120x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 120,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "monitoring"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "2ac707c1e83e",
+    "template": "transient healthcheck probe timeout (<num>/<num>) on pos-gateway-prod-<num>",
+    "service": "pos-gateway",
+    "volume": 145,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 145x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 145,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "uptime"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "2ca5d817b3f4",
+    "template": "search query p95 latency warning 2400ms on search-prod-<num>",
+    "service": "search",
+    "volume": 51,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 51x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 51,
+      "incident_involvement": 0,
+      "max_severity_num": 2,
+      "n_services_with_this_fp": 1,
+      "source": "monitoring"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "2cd3d3ea3548",
+    "template": "disk usage warning: /var/log reached <num>% on log-cluster-prod-<num>",
+    "service": "log-cluster",
+    "volume": 1381,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "raise_threshold",
+    "recommendation_text": "Fires every ~14 min (CV=0.09, very periodic). Raise the alert threshold.",
+    "evidence": {
+      "volume": 1381,
+      "incident_involvement": 0,
+      "max_severity_num": 2,
+      "n_services_with_this_fp": 1,
+      "source": "monitoring"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "3cd880bf43fd",
+    "template": "reporting query elapsed 2400ms on analytics-prod-<num>",
+    "service": "analytics",
+    "volume": 78,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 78x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 78,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "logging"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "3ffd59fb80a5",
+    "template": "reporting query elapsed 4800ms on analytics-prod-<num>",
+    "service": "analytics",
+    "volume": 85,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 85x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 85,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "logging"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "40ba63656496",
+    "template": "transient healthcheck probe timeout (<num>/<num>) on ingress-controller-prod-<num>",
+    "service": "ingress-controller",
+    "volume": 183,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 183x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 183,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "uptime"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "4683b30a96ea",
+    "template": "transient healthcheck probe timeout (<num>/<num>) on checkout-web-prod-<num>",
+    "service": "checkout-web",
+    "volume": 156,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 156x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 156,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "uptime"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "47eef27b7ec3",
+    "template": "transient healthcheck probe timeout (<num>/<num>) on internal-proxy-prod-<num>",
+    "service": "internal-proxy",
+    "volume": 162,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 162x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 162,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "uptime"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "4ba1110da8ea",
+    "template": "reporting query elapsed 7500ms on analytics-prod-<num>",
+    "service": "analytics",
+    "volume": 84,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 84x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 84,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "logging"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "4cbe57e6c174",
+    "template": "transient healthcheck probe timeout (<num>/<num>) on cdn-origin-prod-<num>",
+    "service": "cdn-origin",
+    "volume": 155,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 155x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 155,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "uptime"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "51419770dbb2",
+    "template": "transient healthcheck probe timeout (<num>/<num>) on webhook-dispatcher-prod-<num>",
+    "service": "webhook-dispatcher",
+    "volume": 163,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 163x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 163,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "uptime"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "58a86ea86370",
+    "template": "transient healthcheck probe timeout (<num>/<num>) on event-broker-prod-<num>",
+    "service": "event-broker",
+    "volume": 167,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 167x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 167,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "uptime"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "70dc8eccfe4a",
+    "template": "transient healthcheck probe timeout (<num>/<num>) on graphql-gateway-prod-<num>",
+    "service": "graphql-gateway",
+    "volume": 158,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 158x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 158,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "uptime"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "7544e4bf8136",
+    "template": "transient healthcheck probe timeout (<num>/<num>) on merchant-api-prod-<num>",
+    "service": "merchant-api",
+    "volume": 166,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 166x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 166,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "uptime"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "792b38c11828",
+    "template": "scheduled nightly job cpu spike at <num>% on accounting-prod-<num>",
+    "service": "accounting",
+    "volume": 128,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 128x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 128,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "monitoring"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "84b51b32d47d",
+    "template": "transient healthcheck probe timeout (<num>/<num>) on public-api-prod-<num>",
+    "service": "public-api",
+    "volume": 170,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 170x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 170,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "uptime"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "9636a5ff1167",
+    "template": "transient healthcheck probe timeout (<num>/<num>) on partner-gateway-prod-<num>",
+    "service": "partner-gateway",
+    "volume": 167,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 167x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 167,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "uptime"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "9f49ddec15be",
+    "template": "transient healthcheck probe timeout (<num>/<num>) on stream-consumer-prod-<num>",
+    "service": "stream-consumer",
+    "volume": 173,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 173x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 173,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "uptime"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "a1054dde751d",
+    "template": "transient healthcheck probe timeout (<num>/<num>) on iot-gateway-prod-<num>",
+    "service": "iot-gateway",
+    "volume": 173,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 173x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 173,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "uptime"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "b9890bc38d55",
+    "template": "transient healthcheck probe timeout (<num>/<num>) on mobile-bff-prod-<num>",
+    "service": "mobile-bff",
+    "volume": 168,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 168x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 168,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "uptime"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "be191507cc05",
+    "template": "reporting query elapsed 820ms on analytics-prod-<num>",
+    "service": "analytics",
+    "volume": 111,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 111x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 111,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "logging"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "cca4b7f6eb4f",
+    "template": "search query p95 latency warning 450ms on search-prod-<num>",
+    "service": "search",
+    "volume": 62,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 62x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 62,
+      "incident_involvement": 0,
+      "max_severity_num": 2,
+      "n_services_with_this_fp": 1,
+      "source": "monitoring"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "d1582d967be3",
+    "template": "scheduled nightly job cpu spike at <num>% on invoicing-prod-<num>",
+    "service": "invoicing",
+    "volume": 114,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 114x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 114,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "monitoring"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "d26142fad200",
+    "template": "reporting query elapsed 1250ms on analytics-prod-<num>",
+    "service": "analytics",
+    "volume": 97,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 97x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 97,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "logging"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "d4f4bfd18c6d",
+    "template": "reporting query elapsed 450ms on analytics-prod-<num>",
+    "service": "analytics",
+    "volume": 99,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 99x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 99,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "logging"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "d5d84ffa77a9",
+    "template": "search query p95 latency warning 820ms on search-prod-<num>",
+    "service": "search",
+    "volume": 55,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 55x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 55,
+      "incident_involvement": 0,
+      "max_severity_num": 2,
+      "n_services_with_this_fp": 1,
+      "source": "monitoring"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "e2c1c3f5b9af",
+    "template": "search query p95 latency warning 7500ms on search-prod-<num>",
+    "service": "search",
+    "volume": 50,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 50x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 50,
+      "incident_involvement": 0,
+      "max_severity_num": 2,
+      "n_services_with_this_fp": 1,
+      "source": "monitoring"
+    },
+    "status": "pending"
+  },
+  {
+    "fingerprint_id": "f5623da8d254",
+    "template": "transient healthcheck probe timeout (<num>/<num>) on search-api-prod-<num>",
+    "service": "search-api",
+    "volume": 169,
+    "incident_involvement": 0,
+    "precursor_rate": 0.0,
+    "recommendation_type": "downgrade_severity",
+    "recommendation_text": "Fires 169x with 0 incident involvement. Downgrade severity to info/low or suppress.",
+    "evidence": {
+      "volume": 169,
+      "incident_involvement": 0,
+      "max_severity_num": 1,
+      "n_services_with_this_fp": 1,
+      "source": "uptime"
+    },
+    "status": "pending"
+  }
+]

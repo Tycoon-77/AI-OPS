@@ -1,0 +1,281 @@
+{
+  "db-primary": [
+    "accounting",
+    "auth-service",
+    "cart",
+    "inventory",
+    "loyalty",
+    "orders",
+    "payments",
+    "payments-gateway",
+    "rate-limiter",
+    "search-index",
+    "shipping",
+    "user-profile"
+  ],
+  "db-replica": [
+    "accounting",
+    "analytics",
+    "auth-service",
+    "catalog",
+    "config-service",
+    "feature-flags",
+    "geo-service",
+    "identity",
+    "inventory",
+    "returns",
+    "service-mesh",
+    "sms-gateway",
+    "tax"
+  ],
+  "cache-redis": [
+    "analytics",
+    "fraud-detection",
+    "recommendations",
+    "search",
+    "vendor-portal"
+  ],
+  "msg-queue": [
+    "coupons",
+    "email-gateway",
+    "feature-flags",
+    "feed-service",
+    "identity",
+    "scheduler",
+    "sms-gateway"
+  ],
+  "dns": [
+    "customer-support",
+    "feature-flags",
+    "geo-service",
+    "loyalty",
+    "orders",
+    "payments",
+    "payments-gateway",
+    "pricing",
+    "recommendations",
+    "reviews",
+    "tax",
+    "warehouse"
+  ],
+  "object-storage": [
+    "audit-log",
+    "auth-service",
+    "billing",
+    "cart",
+    "currency-exchange",
+    "email-gateway",
+    "feed-service",
+    "fulfillment",
+    "returns",
+    "search",
+    "wishlist"
+  ],
+  "log-cluster": [
+    "billing",
+    "cart",
+    "discounts",
+    "email-gateway",
+    "file-service",
+    "fraud-detection",
+    "payments",
+    "payments-gateway",
+    "sms-gateway",
+    "subscriptions",
+    "user-profile"
+  ],
+  "secrets-vault": [
+    "coupons",
+    "customer-support",
+    "invoicing",
+    "notifications",
+    "orders",
+    "reviews"
+  ],
+  "auth-service": [],
+  "identity": [
+    "orders",
+    "user-profile"
+  ],
+  "config-service": [
+    "analytics",
+    "fraud-detection"
+  ],
+  "feature-flags": [
+    "catalog",
+    "fraud-detection",
+    "loyalty",
+    "search",
+    "tax"
+  ],
+  "rate-limiter": [
+    "feed-service"
+  ],
+  "scheduler": [
+    "cart"
+  ],
+  "search-index": [
+    "analytics",
+    "notifications"
+  ],
+  "email-gateway": [
+    "currency-exchange",
+    "discounts",
+    "pricing"
+  ],
+  "sms-gateway": [
+    "returns"
+  ],
+  "payments-gateway": [
+    "accounting",
+    "discounts",
+    "loyalty",
+    "subscriptions"
+  ],
+  "file-service": [
+    "coupons",
+    "inventory",
+    "payments",
+    "pricing",
+    "vendor-portal"
+  ],
+  "geo-service": [
+    "recommendations"
+  ],
+  "audit-log": [
+    "billing",
+    "fulfillment",
+    "reviews",
+    "shipping"
+  ],
+  "service-mesh": [
+    "catalog",
+    "customer-support",
+    "invoicing",
+    "warehouse",
+    "wishlist"
+  ],
+  "cart": [
+    "admin-portal"
+  ],
+  "orders": [
+    "graphql-gateway",
+    "pos-gateway"
+  ],
+  "payments": [
+    "cdn-origin",
+    "graphql-gateway",
+    "mobile-bff"
+  ],
+  "inventory": [
+    "checkout-web",
+    "event-broker",
+    "pos-gateway"
+  ],
+  "catalog": [
+    "iot-gateway"
+  ],
+  "pricing": [],
+  "search": [
+    "ingress-controller",
+    "public-api"
+  ],
+  "recommendations": [
+    "graphql-gateway",
+    "internal-proxy",
+    "mobile-bff",
+    "partner-gateway",
+    "webhook-dispatcher"
+  ],
+  "notifications": [],
+  "billing": [],
+  "shipping": [
+    "merchant-api"
+  ],
+  "loyalty": [
+    "api-gateway",
+    "search-api"
+  ],
+  "coupons": [
+    "stream-consumer"
+  ],
+  "tax": [
+    "ingress-controller",
+    "search-api"
+  ],
+  "fraud-detection": [
+    "search-api",
+    "web-frontend"
+  ],
+  "user-profile": [
+    "internal-proxy",
+    "public-api"
+  ],
+  "subscriptions": [
+    "web-frontend",
+    "webhook-dispatcher"
+  ],
+  "discounts": [
+    "admin-portal"
+  ],
+  "returns": [
+    "admin-portal",
+    "internal-proxy",
+    "partner-gateway"
+  ],
+  "analytics": [],
+  "reviews": [
+    "api-gateway",
+    "pos-gateway"
+  ],
+  "warehouse": [
+    "api-gateway",
+    "checkout-web",
+    "pos-gateway",
+    "public-api"
+  ],
+  "fulfillment": [
+    "cdn-origin"
+  ],
+  "currency-exchange": [
+    "iot-gateway",
+    "stream-consumer"
+  ],
+  "wishlist": [],
+  "accounting": [
+    "event-broker",
+    "ingress-controller",
+    "internal-proxy"
+  ],
+  "invoicing": [],
+  "vendor-portal": [
+    "event-broker",
+    "merchant-api"
+  ],
+  "customer-support": [
+    "graphql-gateway",
+    "iot-gateway",
+    "web-frontend"
+  ],
+  "feed-service": [
+    "iot-gateway"
+  ],
+  "api-gateway": [],
+  "web-frontend": [],
+  "mobile-bff": [],
+  "admin-portal": [],
+  "partner-gateway": [],
+  "cdn-origin": [],
+  "graphql-gateway": [],
+  "merchant-api": [],
+  "webhook-dispatcher": [],
+  "public-api": [],
+  "iot-gateway": [],
+  "internal-proxy": [],
+  "ingress-controller": [],
+  "checkout-web": [],
+  "search-api": [],
+  "pos-gateway": [],
+  "stream-consumer": [],
+  "event-broker": []
+}

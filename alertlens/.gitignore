@@ -1,0 +1,14 @@
+.env
+data/*.db-shm
+data/*.db-wal
+data/replay_*.json
+!data/alertlens.db
+!data/*.csv
+!data/*.json
+!data/sample/*
+!models/pair_lgbm.txt
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.DS_Store
