@@ -126,7 +126,7 @@ export const Analytics = () => {
         </div>
         <div className="p-4 rounded-xl bg-[#151D2E] border border-[#293449]">
           <span className="text-slate-400 text-xs font-semibold block uppercase">Noise Reduction Rate</span>
-          <div className="text-2xl font-bold font-mono text-emerald-400 mt-1">{summary.alertNoiseReduction}</div>
+          <div className="text-2xl font-bold font-mono text-emerald-400 mt-1">{summary.alertNoiseReduction || summary.noiseReduction}</div>
           <span className="text-[11px] text-emerald-300">Mitigates on-call fatigue</span>
         </div>
         <div className="p-4 rounded-xl bg-[#151D2E] border border-[#293449]">

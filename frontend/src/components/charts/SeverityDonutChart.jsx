@@ -1,7 +1,7 @@
 import React from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 
-const CustomTooltip = ({ active, payload }) => {
+const CustomTooltip = ({ active, payload, total }) => {
   if (active && payload && payload.length) {
     const item = payload[0];
     return (
@@ -11,7 +11,7 @@ const CustomTooltip = ({ active, payload }) => {
           <span>{item.name} Severity</span>
         </div>
         <div className="text-slate-300 mt-1 font-mono">
-          {item.value} alerts ({((item.value / 400) * 100).toFixed(1)}%)
+          {item.value} alerts ({total ? ((item.value / total) * 100).toFixed(1) : '0.0'}%)
         </div>
       </div>
     );
@@ -26,7 +26,7 @@ export const SeverityDonutChart = ({ data }) => {
     <div className="h-64 w-full flex flex-col items-center justify-center relative">
       <ResponsiveContainer width="100%" height="80%">
         <PieChart>
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<CustomTooltip total={total} />} />
           <Pie
             data={data}
             innerRadius={55}

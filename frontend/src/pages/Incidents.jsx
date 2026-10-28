@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useBackendStatus, fmtInt } from '../services/status';
 import { useNavigate } from 'react-router-dom';
 import {
   Flame,
@@ -19,6 +20,7 @@ import { SeverityBadge, StatusBadge, CorrelationTypeBadge } from '../components/
 import { formatDateTime } from '../utils/formatters';
 
 export const Incidents = () => {
+  const { stats } = useBackendStatus();
   const navigate = useNavigate();
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -114,7 +116,7 @@ export const Incidents = () => {
               Multi-Service Alert Compression Active
             </span>
             <span className="text-slate-400 text-[11px]">
-              375 of 400 alerts grouped into 3 incidents with average confidence of 92.0%.
+              {stats ? `${fmtInt(stats.rawAlerts)} alerts → ${fmtInt(stats.surfaced)} surfaced cards (${fmtInt(stats.redOrange)} RED+ORANGE). Showing the top ${incidents?.length ?? 0} by priority.` : 'Backend unreachable: counts unavailable.'}
             </span>
           </div>
         </div>
@@ -127,9 +129,9 @@ export const Incidents = () => {
             onChange={(e) => setFilterSeverity(e.target.value)}
             className="bg-[#111827] border border-[#293449] text-xs text-white px-3 py-1.5 rounded-lg focus:outline-none focus:border-indigo-500"
           >
-            <option value="ALL">All Severities (3)</option>
-            <option value="CRITICAL">Critical (2)</option>
-            <option value="WARNING">Warning (1)</option>
+            <option value="ALL">All Severities</option>
+            <option value="CRITICAL">Critical</option>
+            <option value="WARNING">Warning</option>
           </select>
         </div>
       </div>
@@ -174,7 +176,7 @@ export const Incidents = () => {
                       Probable Root Cause
                     </span>
                     <span className="font-mono text-indigo-400 font-bold">
-                      {inc.confidenceScore}% Confidence
+                      origin score {inc.originScore ?? inc.confidenceScore}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-xs font-mono font-bold text-white">
@@ -245,7 +247,7 @@ export const Incidents = () => {
                   <th className="py-3 px-4">Incident Title</th>
                   <th className="py-3 px-4">Severity</th>
                   <th className="py-3 px-4">Probable Root Cause</th>
-                  <th className="py-3 px-4">Confidence</th>
+                  <th className="py-3 px-4" title="Heuristic ranking score, not a probability">Origin score</th>
                   <th className="py-3 px-4">Related Alerts</th>
                   <th className="py-3 px-4">Affected Services</th>
                   <th className="py-3 px-4">Detected</th>
@@ -274,7 +276,7 @@ export const Incidents = () => {
                       </span>
                     </td>
                     <td className="py-3.5 px-4 font-mono font-bold text-indigo-400">
-                      {inc.confidenceScore}%
+                      {inc.originScore ?? inc.confidenceScore}
                     </td>
                     <td className="py-3.5 px-4 font-mono font-semibold text-white">
                       {inc.relatedAlertsCount}

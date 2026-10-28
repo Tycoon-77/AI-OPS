@@ -126,7 +126,7 @@ export const RootCauseAnalysis = () => {
           {/* Confidence Meter Box */}
           <div className="p-4 rounded-xl bg-[#0B1020] border border-[#293449] min-w-[200px] text-center space-y-1">
             <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">
-              Hypothesis Confidence
+              Origin score (heuristic, not a probability)
             </span>
             <div className="text-3xl font-extrabold font-mono text-indigo-400">
               {selectedIncident.confidenceScore}%
@@ -314,7 +314,7 @@ export const RootCauseAnalysis = () => {
             Correlation Process Architecture
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            How SignalIQ distilled 400 alerts down to this incident without loss of information
+            How SignalIQ distilled alerts down to this incident without loss of information
           </p>
         </div>
 

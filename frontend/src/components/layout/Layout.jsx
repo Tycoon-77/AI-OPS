@@ -4,11 +4,13 @@ import { Sidebar } from './Sidebar';
 import { TopNavbar } from './TopNavbar';
 import { DemoBanner } from '../common/DemoBanner';
 import { AlertUploadModal } from '../alerts/AlertUploadModal';
+import { useBackendStatus, fmtInt } from '../../services/status';
 
 export const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const navigate = useNavigate();
+  const { live, stats } = useBackendStatus();
 
   const handleUploadSuccess = (result) => {
     // Optionally trigger route refresh or navigate to Alerts explorer
@@ -40,11 +42,11 @@ export const Layout = () => {
               <span className="font-semibold text-slate-300">SignalIQ</span> – Less Alert Noise. More Incident Intelligence. (AO-01)
             </div>
             <div className="flex items-center gap-4">
-              <span>Telemetry Preserved: 100%</span>
+              <span>{live && stats ? `${fmtInt(stats.rawAlerts)} alerts → ${fmtInt(stats.surfaced)} cards (${stats.noiseCutPct}% fewer)` : 'Live counts unavailable'}</span>
               <span className="h-3 w-px bg-slate-800" />
-              <span>Noise Reduction: 93.75%</span>
+              <span>{live && stats ? `${fmtInt(stats.redOrange)} RED+ORANGE` : '—'}</span>
               <span className="h-3 w-px bg-slate-800" />
-              <span>FastAPI Architecture Ready</span>
+              <span>Simulated data</span>
             </div>
           </footer>
         </div>

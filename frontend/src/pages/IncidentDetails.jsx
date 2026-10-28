@@ -179,7 +179,7 @@ export const IncidentDetails = () => {
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <CorrelationTypeBadge isConfirmed={false} />
                   <span className="text-xs text-slate-400">
-                    Confidence Score:{' '}
+                    Origin score (heuristic):{' '}
                     <strong className="text-indigo-400 font-mono text-sm">{incident.confidenceScore}%</strong>
                   </span>
                   <span className="text-[11px] text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
@@ -221,7 +221,7 @@ export const IncidentDetails = () => {
                 </div>
                 <div className="p-3 rounded-xl bg-[#0B1020] border border-[#293449]">
                   <span className="text-[10px] text-slate-400 uppercase font-semibold block">Affected Services</span>
-                  <span className="text-xl font-bold font-mono text-sky-400">{incident.affectedServices.length}</span>
+                  <span className="text-xl font-bold font-mono text-sky-400">{incident.affectedServices?.length ?? incident.n_services ?? 0}</span>
                   <span className="text-[10px] text-slate-400 block mt-0.5">Cascaded downstream</span>
                 </div>
               </div>
@@ -259,9 +259,11 @@ export const IncidentDetails = () => {
                     >
                       {item.isFact ? 'CONFIRMED EVIDENCE' : 'PROBABLE CORRELATION'}
                     </span>
-                    <span className="text-xs font-mono font-semibold text-slate-300">
-                      Confidence: {item.confidence}%
-                    </span>
+                    {item.confidence != null && (
+                      <span className="text-xs font-mono font-semibold text-slate-300">
+                        Confidence: {item.confidence}%
+                      </span>
+                    )}
                   </div>
 
                   <h3 className="text-sm font-semibold text-white">{item.title}</h3>
@@ -334,7 +336,7 @@ export const IncidentDetails = () => {
                 Why Were These Alerts Correlated?
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                SignalIQ evaluated four distinct intelligence axes to group this incident with {incident.confidenceScore}% confidence.
+                SignalIQ evaluated four distinct intelligence axes to group this incident (origin score {incident.originScore ?? incident.confidenceScore}/100, a heuristic ranking, not a probability).
               </p>
             </div>
 
@@ -391,7 +393,7 @@ export const IncidentDetails = () => {
                   {incident.correlationExplanation.historicalAssociation}
                 </p>
                 <div className="text-[11px] text-slate-400 pt-1 font-mono">
-                  Fingerprint Match: FP-DB-CONN-04 (Confidence 91%)
+                  Fingerprint match: not computed (placeholder removed)
                 </div>
               </div>
             </div>

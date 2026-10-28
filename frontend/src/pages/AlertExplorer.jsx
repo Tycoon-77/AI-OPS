@@ -142,7 +142,7 @@ export const AlertExplorer = () => {
           <div>
             <span className="text-xs text-slate-400 block font-medium">Total Ingested</span>
             <span className="text-2xl font-bold font-mono text-white mt-0.5 block">
-              {alertsData?.stats?.total || 400}
+              {alertsData?.stats?.total != null ? alertsData.stats.total.toLocaleString('en-US') : '—'}
             </span>
           </div>
           <div className="w-9 h-9 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
@@ -154,7 +154,7 @@ export const AlertExplorer = () => {
           <div>
             <span className="text-xs text-slate-400 block font-medium">Critical Alerts</span>
             <span className="text-2xl font-bold font-mono text-red-400 mt-0.5 block">
-              {alertsData?.stats?.critical || 262}
+              {alertsData?.stats?.critical != null ? alertsData.stats.critical.toLocaleString('en-US') : "—"}
             </span>
           </div>
           <div className="w-9 h-9 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center">
@@ -166,7 +166,7 @@ export const AlertExplorer = () => {
           <div>
             <span className="text-xs text-slate-400 block font-medium">Warning Alerts</span>
             <span className="text-2xl font-bold font-mono text-amber-400 mt-0.5 block">
-              {alertsData?.stats?.warning || 118}
+              {alertsData?.stats?.warning != null ? alertsData.stats.warning.toLocaleString('en-US') : "—"}
             </span>
           </div>
           <div className="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
@@ -178,7 +178,7 @@ export const AlertExplorer = () => {
           <div>
             <span className="text-xs text-slate-400 block font-medium">Duplicates Identified</span>
             <span className="text-2xl font-bold font-mono text-sky-400 mt-0.5 block">
-              {alertsData?.stats?.duplicates || 94}
+              {alertsData?.stats?.duplicates != null ? alertsData.stats.duplicates.toLocaleString('en-US') : "—"}
             </span>
           </div>
           <div className="w-9 h-9 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center">

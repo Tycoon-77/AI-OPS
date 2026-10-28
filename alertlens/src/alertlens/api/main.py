@@ -17,6 +17,8 @@ from alertlens.config import settings
 from alertlens.api.db import get_connection
 from alertlens.api.routes_react import router as react_router
 
+_REPO = Path(__file__).resolve().parents[4]  # repo root (AI-OPS)
+
 app = FastAPI(
     title="AlertLens / SignalIQ API",
     version="1.0.0",
@@ -47,9 +49,9 @@ def _latest_run(conn: sqlite3.Connection) -> Optional[str]:
 
 @app.get("/")
 def root():
-    index_file = Path("/Users/keerthanbs/PROJECTS/AI-OPS/alertlens/dist/index.html")
+    index_file = _REPO / "alertlens" / "dist" / "index.html"
     if not index_file.exists():
-        index_file = Path("/Users/keerthanbs/PROJECTS/AI-OPS/frontend/dist/index.html")
+        index_file = _REPO / "frontend" / "dist" / "index.html"
     if index_file.exists():
         return FileResponse(index_file)
 
@@ -244,7 +246,7 @@ def replay_day(day: str):
 # ---------------------------------------------------------------------------
 
 @app.get("/api/v1/summary")
-def summary(day: Optional[str] = None):
+def summary(day: Optional[str] = None, split: Optional[str] = None):
     conn = get_connection()
     run_id = _latest_run(conn)
     if not run_id:
@@ -260,12 +262,15 @@ def summary(day: Optional[str] = None):
         f"SELECT COUNT(*) FROM incidents_pred {where}", params
     ).fetchone()[0]
 
-    raw_where = "WHERE split='train'"
+    raw_clauses = []
+    raw_params = []
+    if split and split.lower() != "all":
+        raw_clauses.append("split=?")
+        raw_params.append(split)
     if day:
-        raw_where += " AND date(first_ts)=?"
-        raw_params = [day]
-    else:
-        raw_params = []
+        raw_clauses.append("date(first_ts)=?")
+        raw_params.append(day)
+    raw_where = ("WHERE " + " AND ".join(raw_clauses)) if raw_clauses else ""
 
     raw_alerts = conn.execute(
         f"SELECT COALESCE(SUM(alert_count),0) FROM alert_groups {raw_where}", raw_params
@@ -393,6 +398,8 @@ def incident_detail(incident_id: str):
     # Services involved
     services = conn.execute("SELECT * FROM services").fetchall()
     svc_ids_in_cluster = {m["service_id"] for m in members}
+    if inc["origin_service"]:
+        svc_ids_in_cluster.add(inc["origin_service"])
 
     edges = conn.execute("SELECT * FROM service_edges").fetchall()
 
@@ -428,7 +435,7 @@ def incident_detail(incident_id: str):
             "first_ts":       inc["first_ts"],
             "last_ts":        inc["last_ts"],
             "n_alerts_raw":   inc["n_alerts_raw"],
-            "n_services":     inc["n_services"],
+            "n_services":     len(svc_ids_in_cluster),
             "blast_radius":   inc["blast_radius"],
             "max_severity":   sev_name.get(inc["max_severity_num"], "low"),
             "history_match":  inc["history_match"],
@@ -569,13 +576,19 @@ def get_metrics():
     for r in rows:
         result[r["name"]] = r["value"]
 
-    # Provide baseline metrics for comparison charts
-    result.setdefault("baseline_compression_ratio", 11.2)
-    result.setdefault("baseline_recall", 0.83)
-    result.setdefault("baseline_pairwise_precision", 0.71)
-    result.setdefault("baseline_bcubed_f1", 0.74)
-    result.setdefault("baseline_origin_top1", 0.55)
-    result.setdefault("median_time_to_surface_s", 68)
+    # Baseline = measured rules-only clusters (data/baseline/clusters_rules.json), never hardcoded.
+    from alertlens.api.routes_react import _scorecard
+    base = _scorecard("baseline/clusters_rules.json").get("all", {})
+    if base:
+        result["baseline_label"] = "rules baseline (measured)"
+        result["baseline_compression_ratio"] = base.get("compression_ratio")
+        result["baseline_recall"] = base.get("recall_lenient_any_alert")
+        result["baseline_pairwise_precision"] = base.get("pairwise_precision")
+        result["baseline_bcubed_f1"] = base.get("bcubed_f1")
+        result["baseline_origin_top1"] = base.get("origin_top1")
+    else:
+        result["baseline_label"] = "baseline not available (data/baseline/clusters_rules.json missing)"
+    result.setdefault("median_time_to_surface_s", None)
 
     return result
 
@@ -584,9 +597,9 @@ def get_metrics():
 # React SPA Static Mounting (serves frontend/dist directly)
 # ---------------------------------------------------------------------------
 
-_dist_dir = Path("/Users/keerthanbs/PROJECTS/AI-OPS/alertlens/dist")
+_dist_dir = _REPO / "alertlens" / "dist"
 if not _dist_dir.exists():
-    _dist_dir = Path("/Users/keerthanbs/PROJECTS/AI-OPS/frontend/dist")
+    _dist_dir = _REPO / "frontend" / "dist"
 
 if _dist_dir.exists():
     _assets_dir = _dist_dir / "assets"

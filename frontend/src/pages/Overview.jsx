@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useBackendStatus, fmtInt } from '../services/status';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import {
   BellRing,
@@ -23,6 +24,7 @@ import { analyticsService } from '../services/analyticsService';
 import { incidentService } from '../services/incidentService';
 
 export const Overview = () => {
+  const { stats, live } = useBackendStatus();
   const { openUploadModal } = useOutletContext() || {};
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,7 @@ export const Overview = () => {
             </h1>
             <p className="text-sm sm:text-base text-[#94A3B8] mt-2 leading-relaxed">
               Monitor alerts, discover incidents, and understand the root cause of system failures.
-              Transforming <span className="text-white font-medium">16,339 noisy alerts</span> into <span className="text-indigo-400 font-medium">correlated incidents</span> without deleting original alert data.
+              Transforming <span className="text-white font-medium">{stats ? fmtInt(stats.rawAlerts) : "16,339"} noisy alerts</span> into <span className="text-indigo-400 font-medium">{stats ? fmtInt(stats.surfaced) : "correlated"} surfaced cards</span> without deleting original alert data.
             </p>
           </div>
 
@@ -92,40 +94,38 @@ export const Overview = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <MetricCard
           title="Total Alerts"
-          value={analytics?.summary?.totalAlerts ? String(analytics.summary.totalAlerts) : "16,339"}
+          value={analytics?.summary?.totalAlerts != null ? fmtInt(analytics.summary.totalAlerts) : "—"}
           subtitle="Ingested from multi-service monitoring"
           icon={BellRing}
           color="indigo"
         />
         <MetricCard
-          title="Correlated Alerts"
-          value={analytics?.summary?.correlatedAlerts ? String(analytics.summary.correlatedAlerts) : "1,332"}
-          subtitle={`Grouped across ${incidents.length || 11} incidents`}
+          title="Alerts in real incidents (ground truth)"
+          value={analytics?.summary?.correlatedAlerts != null ? fmtInt(analytics.summary.correlatedAlerts) : "—"}
+          subtitle="Labelled by the simulator, not by the model"
           icon={CheckCircle2}
           color="sky"
-          trend="+97.4%"
         />
         <MetricCard
-          title="Active Incidents"
-          value={String(incidents.length || analytics?.summary?.activeIncidents || "11")}
-          subtitle="Topological causal clusters detected"
+          title="Surfaced incident cards"
+          value={stats ? fmtInt(stats.surfaced) : "—"}
+          subtitle={stats ? `${fmtInt(stats.redOrange)} RED+ORANGE · ${fmtInt(stats.yellow)} YELLOW` : "Backend unreachable"}
           icon={Flame}
           color="red"
         />
         <MetricCard
-          title="Uncorrelated Alerts"
-          value={analytics?.summary?.uncorrelatedAlerts ? String(analytics.summary.uncorrelatedAlerts) : "15,007"}
-          subtitle="Low-signal noise safely preserved"
+          title="Alerts outside real incidents"
+          value={analytics?.summary?.uncorrelatedAlerts != null ? fmtInt(analytics.summary.uncorrelatedAlerts) : "—"}
+          subtitle="Ground truth: noise and singletons (all kept)"
           icon={Layers}
           color="amber"
         />
         <MetricCard
           title="Noise Reduction"
-          value={analytics?.summary?.noiseReduction || "97.38%"}
-          subtitle="Engineered SRE fatigue mitigation"
+          value={stats ? `${stats.noiseCutPct}%` : "—"}
+          subtitle="Alerts → surfaced cards (see Analytics for precision)"
           icon={TrendingDown}
           color="emerald"
-          trend="AO-01"
         />
       </div>
 
@@ -158,7 +158,7 @@ export const Overview = () => {
           <div className="flex items-center justify-between mb-2">
             <div>
               <h2 className="text-sm font-bold text-white tracking-wide">Alerts by Severity</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Breakdown of 400 ingested alerts</p>
+              <p className="text-xs text-slate-400 mt-0.5">{live && stats ? `Breakdown of ${fmtInt(stats.rawAlerts)} ingested alerts` : "Breakdown of ingested alerts"}</p>
             </div>
             <span className="text-[10px] text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
               Donut

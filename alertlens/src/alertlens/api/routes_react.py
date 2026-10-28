@@ -10,6 +10,8 @@ import sqlite3
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from pathlib import Path
+
 from fastapi import APIRouter, HTTPException, Query
 
 from alertlens.api.db import get_connection
@@ -24,17 +26,65 @@ def _latest_run(conn: sqlite3.Connection) -> Optional[str]:
     return row["run_id"] if row else None
 
 
+_DATA_DIR = Path(__file__).resolve().parents[3] / "data"
+_EVAL_CACHE: Dict[str, Any] = {}
+
+
+def _scorecard(clusters_rel: str = "clusters.json") -> Dict[str, Any]:
+    """Measured metrics for a clusters file (cached by mtime). Empty dict if files are missing."""
+    from alertlens.eval.scorecard import evaluate_files
+
+    cpath = _DATA_DIR / clusters_rel
+    apath, ipath = _DATA_DIR / "alerts.csv", _DATA_DIR / "incidents.csv"
+    if not (cpath.exists() and apath.exists() and ipath.exists()):
+        return {}
+    key = (str(cpath), cpath.stat().st_mtime)
+    if _EVAL_CACHE.get("key") != key or _EVAL_CACHE.get("rel") != clusters_rel:
+        _EVAL_CACHE.update(key=key, rel=clusters_rel, val=evaluate_files(str(cpath), str(apath), str(ipath)))
+    return _EVAL_CACHE["val"]
+
+
+@router.get("/eval/metrics")
+def eval_metrics():
+    """Measured scorecard for the current clusters.json and for the measured rules baseline."""
+    cur = _scorecard("clusters.json")
+    base = _scorecard("baseline/clusters_rules.json")
+    return {"current": cur, "rulesBaseline": base, "simulated": True,
+            "note": "Computed live from clusters.json vs ground truth. Test split has only 4 incidents."}
+
+
 # ---------------------------------------------------------------------------
 # 1. Health
 # ---------------------------------------------------------------------------
 
+def _load_auc() -> Dict[str, Any]:
+    """Held-out AUC written by scripts/eval_test_auc.py to data/eval/test_auc.json (never hardcoded)."""
+    path = Path(__file__).resolve().parents[3] / "data" / "eval" / "test_auc.json"
+    try:
+        return json.loads(path.read_text())
+    except (OSError, ValueError):
+        return {}
+
+
 @router.get("/health")
 def health():
+    conn = get_connection()
+    run_id = _latest_run(conn)
+    n_alerts = conn.execute("SELECT COUNT(*) FROM alerts").fetchone()[0]
+    conn.close()
+    auc = _load_auc()
     return {
         "status": "ok",
+        "dataStatus": "live",
         "service": "SignalIQ Intelligence Engine (AlertLens)",
         "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
-        "model": "LightGBM Gradient Boosting Pairwise Classifier (ROC-AUC 0.9808) + Graph Topology",
+        "runId": run_id,
+        "alertCount": n_alerts,
+        "simulated": True,
+        "model": "LightGBM pairwise classifier (trained; clustering currently uses time-window + graph-distance rules)",
+        "testRocAuc": auc.get("test_auc"),
+        "trainRocAuc": auc.get("train_auc"),
+        "aucNote": None if auc else "not computed yet - run scripts/eval_test_auc.py",
     }
 
 
@@ -54,9 +104,13 @@ def _format_incident(inc: sqlite3.Row, conn: sqlite3.Connection, run_id: str) ->
            WHERE im.run_id=? AND im.incident_pred_id=?""",
         (run_id, inc_id),
     ).fetchall()
-    services_list = [r["service_id"] for r in member_rows] or [inc["origin_service"]]
-    if inc["origin_service"] not in services_list:
-        services_list.insert(0, inc["origin_service"])
+    services_set = {r["service_id"] for r in member_rows}
+    if inc["origin_service"]:
+        services_set.add(inc["origin_service"])
+    services_list = [inc["origin_service"]] if inc["origin_service"] else []
+    services_list.extend(sorted(s for s in services_set if s != inc["origin_service"]))
+    if not services_list:
+        services_list = [inc["origin_service"]]
 
     # Member alerts for timeline
     timeline_alerts = conn.execute(
@@ -85,9 +139,9 @@ def _format_incident(inc: sqlite3.Row, conn: sqlite3.Connection, run_id: str) ->
     # Severity mapping
     band = inc["band"]
     sev = "CRITICAL" if band == "RED" else "WARNING" if band == "ORANGE" else "INFO"
-    confidence = int(min(1.0, (inc["origin_score"] or inc["priority_score"])) * 100)
-    if confidence < 70:
-        confidence = int(70 + (inc["priority_score"] * 25))
+    # origin_score = 0.45*earliness + 0.40*upstream coverage + 0.15*tier (heuristic, NOT a probability).
+    origin_score_pct = int(round(min(1.0, (inc["origin_score"] or 0.0)) * 100))
+    confidence = origin_score_pct  # kept for old clients; same value, no artificial floor
 
     primary_reason = reasons[0]["text"] if reasons else "Multi-service cascading alert storm detected."
 
@@ -98,7 +152,7 @@ def _format_incident(inc: sqlite3.Row, conn: sqlite3.Connection, run_id: str) ->
             "type": "CONFIRMED_METRIC" if r["kind"] in ("time", "severity") else "PROBABLE_CORRELATION",
             "title": f"{r['kind'].capitalize()} Evidence",
             "description": r["text"],
-            "confidence": 95 if i == 0 else 88,
+            "confidence": None,
             "isFact": r["kind"] == "time",
         })
 
@@ -131,8 +185,14 @@ def _format_incident(inc: sqlite3.Row, conn: sqlite3.Connection, run_id: str) ->
         "status": "ACTIVE",
         "probableRootCauseService": inc["origin_service"],
         "confidenceScore": confidence,
+        "originScore": origin_score_pct,
+        "originScoreNote": "Heuristic ranking score (0-100), not a calibrated probability.",
+        "priorityScore": round(inc["priority_score"] or 0.0, 3),
+        "band": band,
         "relatedAlertsCount": inc["n_alerts_raw"],
         "affectedServices": services_list,
+        "n_services": len(services_list),
+        "nServices": len(services_list),
         "firstDetected": inc["first_ts"],
         "lastUpdated": inc["last_ts"],
         "noiseReduction": f"{reduction_pct}%",
@@ -140,6 +200,7 @@ def _format_incident(inc: sqlite3.Row, conn: sqlite3.Connection, run_id: str) ->
         "probableRootCause": {
             "service": inc["origin_service"],
             "confidenceScore": confidence,
+            "originScore": origin_score_pct,
             "suspectedOrigin": f"Primary Service ({inc['origin_service']})",
             "explanation": primary_reason,
             "isConfirmed": False,
@@ -189,6 +250,33 @@ def get_incidents(
     incidents = [_format_incident(r, conn, run_id) for r in rows]
     conn.close()
     return incidents
+
+
+@router.get("/incidents/stats")
+def get_incident_stats():
+    """True counts (the list endpoint is capped by `limit`)."""
+    conn = get_connection()
+    run_id = _latest_run(conn)
+    if not run_id:
+        conn.close()
+        return {"runId": None, "surfaced": 0, "red": 0, "orange": 0, "yellow": 0, "redOrange": 0,
+                "totalClusters": 0, "rawAlerts": 0, "alertGroups": 0}
+    rows = conn.execute(
+        "SELECT band, surfaced, COUNT(*) AS n FROM incidents_pred WHERE run_id=? GROUP BY band, surfaced", (run_id,)
+    ).fetchall()
+    by = {(r["band"], r["surfaced"]): r["n"] for r in rows}
+    red, orange, yellow = by.get(("RED", 1), 0), by.get(("ORANGE", 1), 0), by.get(("YELLOW", 1), 0)
+    raw = conn.execute("SELECT COUNT(*) FROM alerts").fetchone()[0]
+    groups = conn.execute("SELECT COUNT(*) FROM alert_groups").fetchone()[0]
+    total = sum(r["n"] for r in rows)
+    conn.close()
+    surfaced = red + orange + yellow
+    return {
+        "runId": run_id, "surfaced": surfaced, "red": red, "orange": orange, "yellow": yellow,
+        "redOrange": red + orange, "totalClusters": total, "background": total - surfaced,
+        "rawAlerts": raw, "alertGroups": groups,
+        "noiseCutPct": round((1 - surfaced / raw) * 100, 2) if raw else 0.0,
+    }
 
 
 @router.get("/incidents/{incident_id}")
@@ -611,28 +699,27 @@ def get_analytics_summary(range: str = "24h"):
         {"name": "Info / Low", "value": sev_rows["info"] or 0, "color": "#38BDF8"},
     ]
 
-    # Hourly trend
+    # Hourly trend (hour of day, all 24 hours; duplicates = raw alerts - distinct dedup groups)
     hourly_rows = conn.execute(
         """SELECT substr(ts, 12, 2) || ':00' AS hr,
                   COUNT(*) AS total,
+                  COUNT(DISTINCT group_id) AS groups,
                   SUM(CASE WHEN truth_incident_id IS NOT NULL THEN 1 ELSE 0 END) AS correlated
            FROM alerts
            GROUP BY hr
-           ORDER BY hr ASC LIMIT 8"""
+           ORDER BY hr ASC"""
     ).fetchall()
 
     hourly_data = []
     for r in hourly_rows:
         tot = r["total"]
-        corr = r["correlated"]
-        dups = max(0, int(tot * 0.35))
-        red = round((1.0 - (1.0 / max(tot, 1))) * 100.0, 1)
+        dups = max(0, tot - (r["groups"] or 0))
         hourly_data.append({
             "hour": r["hr"],
             "totalAlerts": tot,
-            "correlated": corr,
+            "correlated": r["correlated"] or 0,
             "duplicates": dups,
-            "noiseReduction": red,
+            "noiseReduction": round(dups / tot * 100.0, 1) if tot else 0.0,  # dedup reduction only
         })
 
     # Duplicate trends
@@ -647,35 +734,31 @@ def get_analytics_summary(range: str = "24h"):
     ).fetchall() if run_id else []
     metric_map = {r["name"]: r["value"] for r in metrics_rows}
 
+    sc = _scorecard("clusters.json")
+    allm = sc.get("all", {})
+    testm = sc.get("test", {})
+
+    def pct(v):
+        return "n/a" if v is None else f"{v * 100:.1f}%"
+
     evaluation_metrics = {
-        "isDemonstration": True,
-        "label": "Official Evaluation Benchmark against Ground Truth",
-        "note": "Metrics computed against the full 16,339 alert benchmark dataset with ground-truth labels.",
+        "isDemonstration": False,
+        "label": "Measured against simulated ground truth",
+        "note": ("Computed live from clusters.json vs alerts.csv/incidents.csv. Data is simulated. "
+                 f"Test split = {testm.get('n_incidents', 0)} incidents only (anecdotal)."),
         "metrics": [
-            {
-                "name": "Incident Recall",
-                "value": f"{metric_map.get('recall', 1.0) * 100:.1f}%",
-                "status": "verified_demo",
-                "description": "100% of real outages surfaced, including buried noise-storm outages.",
-            },
-            {
-                "name": "Noise Compression Rate",
-                "value": f"{metric_map.get('reduction_pct', 97.4):.1f}%",
-                "status": "verified_demo",
-                "description": "Raw alert volume cut by >97% without dropping true incidents.",
-            },
-            {
-                "name": "Explainability Rate",
-                "value": "100%",
-                "status": "verified_demo",
-                "description": "Every single surfaced incident carries plain-English reasoning.",
-            },
-            {
-                "name": "Held-Out Type Recall",
-                "value": f"{metric_map.get('heldout_recall', 1.0) * 100:.1f}%",
-                "status": "verified_demo",
-                "description": "Novel certificate expiry incidents successfully detected without prior training.",
-            },
+            {"name": "Incident Recall (lenient: any alert in a surfaced card)", "value": pct(allm.get("recall_lenient_any_alert")),
+             "status": "measured", "description": "Share of real incidents with at least one alert inside a surfaced card."},
+            {"name": "Incident Recall (>=50% of alerts in one card)", "value": pct(allm.get("recall_at_least_50pct_in_one_card")),
+             "status": "measured", "description": "Stricter recall: half of the incident's alerts must sit in a single card."},
+            {"name": "Card Precision", "value": pct(allm.get("card_precision")),
+             "status": "measured", "description": f"{allm.get('cards_with_real_incident', 0)} of {allm.get('cards', 0)} surfaced cards contain a real incident alert."},
+            {"name": "Mean Cluster Purity", "value": pct(allm.get("mean_purity_of_incident_cards")),
+             "status": "measured", "description": "True incident alerts / alerts in the card, for cards holding a real incident."},
+            {"name": "Pairwise Precision", "value": pct(allm.get("pairwise_precision")),
+             "status": "measured", "description": "Share of same-card alert pairs that truly belong to the same incident."},
+            {"name": "Origin Top-1", "value": pct(allm.get("origin_top1")),
+             "status": "measured", "description": "Per incident: best card's origin equals the true root-cause service."},
         ],
     }
 
@@ -690,7 +773,7 @@ def get_analytics_summary(range: str = "24h"):
         if run_id
         else 11
     )
-    red_val = metric_map.get("reduction_pct", 97.38)
+    red_val = (1 - active_incidents / tot_alerts) * 100 if tot_alerts else 0.0
 
     summary = {
         "totalAlerts": tot_alerts,
@@ -698,6 +781,7 @@ def get_analytics_summary(range: str = "24h"):
         "activeIncidents": active_incidents,
         "uncorrelatedAlerts": uncorr_alerts,
         "noiseReduction": f"{red_val:.2f}%" if isinstance(red_val, (int, float)) else str(red_val),
+        "alertNoiseReduction": f"{red_val:.2f}%" if isinstance(red_val, (int, float)) else str(red_val),
     }
 
     conn.close()
