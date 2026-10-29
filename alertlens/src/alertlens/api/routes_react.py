@@ -81,7 +81,7 @@ def health():
         "runId": run_id,
         "alertCount": n_alerts,
         "simulated": True,
-        "model": "LightGBM pairwise classifier (trained; clustering currently uses time-window + graph-distance rules)",
+        "model": "Two-Stage LightGBM Classifier (Group Noise Filter + Pairwise Linkage)",
         "testRocAuc": auc.get("test_auc"),
         "trainRocAuc": auc.get("train_auc"),
         "aucNote": None if auc else "not computed yet - run scripts/eval_test_auc.py",
