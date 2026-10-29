@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: signaliq-aiops
+    runtime: python
+    buildCommand: pip install -r alertlens/requirements.txt
+    startCommand: cd alertlens && uvicorn alertlens.api.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.8
+      - key: ALERTLENS_DB_PATH
+        value: data/alertlens.db
